@@ -1,0 +1,38 @@
+{
+    "StartingRoom": "Police Station",
+    "GameRules": [
+        "Navigate rooms using directions 'go <direction>' (e.g., 'go north').",
+        "Pick up items with 'take <item>' (e.g., 'take key').",
+        "Check your inventory with 'inventory'.",
+        "Type 'rules' to see these rules again.",
+        "Type 'quit' to exit the game. Good luck!"
+    ],
+    "Rooms": [
+     {
+        "Name": "Police Station",
+        "Description": "You are in a police station. There are doors to the north and south.",
+        "Exits": { "north": "Kitchen", "south": "Bedroom" },
+        "Items": ["key", "map"]
+    },
+
+    {
+        "Name": "Hallway",
+        "Description": "You are in a long hallway. There are doors to the north and south.",
+        "Exits": { "north": "Kitchen", "south": "Bedroom" },
+        "Items": ["key", "map"]
+    },
+    {
+        "Name": "Kitchen",
+        "Description": "You are in a kitchen. There is a door to the south.",
+        "Exits": { "south": "Hallway" },
+        "Items": ["knife", "apple"]
+    },
+    {
+        "Name": "Bedroom",
+        "Description": "You are in a cozy bedroom. There is a door to the north.",
+        "Exits": { "north": "Hallway" },
+        "Items": ["pillow", "blanket"]
+    }
+]
+
+}
