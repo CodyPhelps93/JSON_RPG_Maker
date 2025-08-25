@@ -1,0 +1,47 @@
+JSON_RPG_Maker/obj/Debug/net8.0/JSON_RPG_Maker.AssemblyInfo.cs
+JSON_RPG_Maker/obj/Debug/net8.0/JSON_RPG_Maker.AssemblyInfoInputs.cache
+## Ignore build output
+JSON_RPG_Maker/bin/
+JSON_RPG_Maker/obj/
+
+## Ignore user-specific files
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+## Ignore VS Code settings
+.vscode/
+
+## Ignore NuGet packages
+*.nupkg
+packages/
+JSON_RPG_Maker/packages/
+
+## Ignore temporary files
+*.tmp
+*.temp
+*.log
+*.vspscc
+*.vssscc
+
+## Ignore test results
+TestResults/
+
+## Ignore build artifacts
+*.dll
+*.exe
+*.pdb
+*.cache
+*.config
+*.db
+
+## Ignore other common files
+_ReSharper*/
+*.resharper
+.idea/
+.DS_Store
+Thumbs.db
+
+## Ignore JSON game saves if desired (uncomment if you don't want to track them)
+# JSON_RPG_Maker/Games/*.JSON
