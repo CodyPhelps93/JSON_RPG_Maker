@@ -12,6 +12,7 @@ namespace JSON_RPG_Maker
         private Dictionary<string, Room> rooms = new Dictionary<string, Room>();
         private Player player;
         private List<string> gameRules = new List<string>();
+        private List<string> PlayerInventory = new List<string>();
 
         public void Run()
         {
@@ -32,7 +33,7 @@ namespace JSON_RPG_Maker
             while (isRunning)
             {
                 DisplayCurrentRoom();
-                Console.Write("\nEnter command: (go <direction>, take <item>, inventory, quit) ");
+                Console.Write("\nEnter command: (go <direction>, take <item>, inventory, quit, save) ");
                 string input = Console.ReadLine().Trim().ToLower();
                 if (string.IsNullOrEmpty(input)) continue;
 
@@ -78,6 +79,11 @@ namespace JSON_RPG_Maker
                 // Prompt user to select a game file
                 Console.Write("Enter the name of the file you want to load (e.g., games.JSON): ");
                 string selectedFile = Console.ReadLine().Trim();
+                // Append .json if not provided
+                if (!selectedFile.EndsWith(".json", StringComparison.OrdinalIgnoreCase))
+                {
+                    selectedFile += ".json";
+                }
                 string filePath = Path.Combine(gamesFolder, selectedFile);
                 if (!File.Exists(filePath))
                 {
@@ -89,18 +95,21 @@ namespace JSON_RPG_Maker
                 string jsonData = File.ReadAllText(filePath);
                 GameData gameData = JsonSerializer.Deserialize<GameData>(jsonData);
                 gameRules = gameData.GameRules ?? new List<string>();
+                PlayerInventory = gameData.PlayerInventory ?? new List<string>();
+                
                 if (gameData != null)
-                {
-                    if (gameData?.Rooms != null)
                     {
-                        foreach (var room in gameData.Rooms)
-                            rooms[room.Name] = room;
-                    }
+                        if (gameData?.Rooms != null)
+                        {
+                            foreach (var room in gameData.Rooms)
+                                rooms[room.Name] = room;
+                        }
                     if (gameData.StartingRoom != null)
                     {
                         player = new Player(gameData.StartingRoom);
+                        player.Inventory = PlayerInventory;
+                        }
                     }
-                }
                 return true;
             }
             catch (Exception ex)
@@ -172,9 +181,52 @@ namespace JSON_RPG_Maker
                 case "rules":
                     DisplayGameRules();
                     break;
+
+                case "save":
+                    Console.WriteLine("Enter the name of the save file (e.g., savegame.json): ");
+                    string fileName = Console.ReadLine().Trim();
+                    if (!fileName.EndsWith(".json", StringComparison.OrdinalIgnoreCase))
+                    {
+                        fileName += ".json";
+                    }
+                    SaveGameData(fileName);
+                    break;
                 default:
                     Console.WriteLine("Unknown command.");
                     break;
+            }
+        }
+
+        private void SaveGameData(string fileName)
+        {
+            string baseDir = AppDomain.CurrentDomain.BaseDirectory;
+            string projectRoot = Directory.GetParent(baseDir)?.Parent?.Parent?.Parent?.FullName ?? throw new DirectoryNotFoundException("could not determine root directory");
+            string gamesFolder = Path.Combine(projectRoot, "Games");
+            string filePath = Path.Combine(gamesFolder, fileName);
+            PlayerInventory = new List<string>();
+                    foreach (var item in player.Inventory)
+                    {
+                        PlayerInventory.Add(item);
+                        
+                    }
+                    Console.WriteLine(string.Join(", ", PlayerInventory)); // remove after debugging
+            try
+            {
+                GameData gameData = new GameData
+                {
+                    Rooms = new List<Room>(rooms.Values),
+                    StartingRoom = player.CurrentRoom,
+                    GameRules = gameRules,
+                    PlayerInventory = PlayerInventory
+
+                };
+                string jsonData = JsonSerializer.Serialize(gameData, new JsonSerializerOptions { WriteIndented = true });
+                File.WriteAllText(filePath, jsonData);
+                Console.WriteLine("Game data saved successfully.");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error saving game data: {ex.Message}");
             }
         }
 

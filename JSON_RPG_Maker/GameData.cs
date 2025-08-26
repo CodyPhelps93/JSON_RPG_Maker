@@ -6,7 +6,8 @@ namespace JSON_RPG_Maker
     public class GameData
     {
         public required string StartingRoom { get; set; }
-        public List<string> ?GameRules { get; set; } 
+        public List<string>? GameRules { get; set; }
         public required List<Room> Rooms { get; set; }
+        public List<string>? PlayerInventory { get; set; }
     }
 }
