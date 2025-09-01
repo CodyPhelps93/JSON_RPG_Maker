@@ -26,6 +26,25 @@
         "Exits": { "north": "Hallway" },
         "Items": ["pillow", "blanket"]
     }
+],
+"PlayerCommands": [
+    { 
+        "Name": "go",
+        "Description": "Move in a specified direction (e.g., 'go north').",
+        "LScript": "if room.Exits[direction] then player.CurrentRoom = room.Exits[direction] print('You move ' .. direction .. ' to ' .. player.CurrentRoom) else print('You can\\'t go that way.') end"
+    },
+    {
+        "Name": "take",
+        "Description": "Pick up an item from the current room.",
+        "LScript": "for i = 1, room.Items.Count do local item = room.Items[i - 1] if item == target then room.Items:Remove(item) player.Inventory:Add(item) print('You took the ' .. item) return end end print('Item not found in the room.')"
+
+    },
+    {
+        "Name": "inventory",
+        "Description": "Show your current inventory.",
+        "LScript": "local count = player.Inventory.Count if count == 0 then print('Your inventory is empty.') else local items = {} for i = 0, count - 1 do items[i+1] = player.Inventory[i] end print('Inventory: ' .. table.concat(items, ', ')) end"
+    }
+    
 ]
 
 }
