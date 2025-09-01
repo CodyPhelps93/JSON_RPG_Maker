@@ -4,6 +4,7 @@ using System.IO;
 using System.Reflection.Metadata.Ecma335;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using NLua;
 
 namespace JSON_RPG_Maker
 {
@@ -13,6 +14,7 @@ namespace JSON_RPG_Maker
         private Player player;
         private List<string> gameRules = new List<string>();
         private List<string> PlayerInventory = new List<string>();
+        private List<GameCommand> PlayerCommands = new List<GameCommand>();
 
         public void Run()
         {
@@ -96,20 +98,21 @@ namespace JSON_RPG_Maker
                 GameData gameData = JsonSerializer.Deserialize<GameData>(jsonData);
                 gameRules = gameData.GameRules ?? new List<string>();
                 PlayerInventory = gameData.PlayerInventory ?? new List<string>();
+                PlayerCommands = gameData.PlayerCommands ?? new List<GameCommand>();
                 
                 if (gameData != null)
+                {
+                    if (gameData?.Rooms != null)
                     {
-                        if (gameData?.Rooms != null)
-                        {
-                            foreach (var room in gameData.Rooms)
-                                rooms[room.Name] = room;
-                        }
+                        foreach (var room in gameData.Rooms)
+                            rooms[room.Name] = room;
+                    }
                     if (gameData.StartingRoom != null)
                     {
                         player = new Player(gameData.StartingRoom);
                         player.Inventory = PlayerInventory;
-                        }
                     }
+                }
                 return true;
             }
             catch (Exception ex)
@@ -146,59 +149,56 @@ namespace JSON_RPG_Maker
 
         private void ProcessCommand(string input)
         {
-            string[] parts = input.Split(' ', 2);
-            string command = parts[0];
-            string argument = parts.Length > 1 ? parts[1] : null;
-
-            switch (command)
+            if (input == "save")
             {
-                case "go":
-                    if (argument != null && rooms.TryGetValue(player.CurrentRoom, out Room currentRoom) && currentRoom.Exits.ContainsKey(argument))
-                    {
-                        player.CurrentRoom = currentRoom.Exits[argument];
-                        Console.WriteLine($"You move {argument} to {player.CurrentRoom}.");
-                    }
-                    else
-                    {
-                        Console.WriteLine("You can't go that way.");
-                    }
-                    break;
-                case "take":
-                    if (argument != null && rooms.TryGetValue(player.CurrentRoom, out Room room) && room.Items.Contains(argument))
-                    {
-                        room.Items.Remove(argument);
-                        player.Inventory.Add(argument);
-                        Console.WriteLine($"You took the {argument}.");
-                    }
-                    else
-                    {
-                        Console.WriteLine("Item not found in the room.");
-                    }
-                    break;
-                case "inventory":
-                    Console.WriteLine("Your inventory: " + (player.Inventory.Count > 0 ? string.Join(", ", player.Inventory) : "Empty"));
-                    break;
-                case "rules":
-                    DisplayGameRules();
-                    break;
+                SaveGameData();
+                return;
+            }
+            else if (input == "rules")
+            {
+                DisplayGameRules();
+                return;
+            }
+            else
+            {
+                string[] parts = input.Split(' ', 2);
+                string command = parts[0];
+                string argument = parts.Length > 1 ? parts[1] : null;
 
-                case "save":
-                    Console.WriteLine("Enter the name of the save file (e.g., savegame.json): ");
+                var cmd = PlayerCommands.FirstOrDefault(pcmd => pcmd.Name == command); // matches command to list of player commands
+                if (cmd != null)
+                {
+                    using (var lua = new Lua())
+                    {
+                        lua.DoString("os = nil; io = nil; debug = nil; package = nil");
+                        // Expose necessary objects to Lua
+                        lua["player"] = player;
+                        lua["room"] = rooms[player.CurrentRoom];
+                        lua["rooms"] = rooms;
+                        lua["inventory"] = player.Inventory;
+                        lua["items"] = rooms[player.CurrentRoom].Items;
+                        lua["direction"] = argument;
+                        lua["target"] = argument;
+
+                        lua.DoString(cmd.LScript);
+                    }
+                }
+                else
+                {
+                    Console.WriteLine("Unknown command.");
+                }
+            }
+            
+        }
+
+        private void SaveGameData()
+        {
+            Console.WriteLine("Enter the name of the save file (e.g., savegame.json): ");
                     string fileName = Console.ReadLine().Trim();
                     if (!fileName.EndsWith(".json", StringComparison.OrdinalIgnoreCase))
                     {
                         fileName += ".json";
                     }
-                    SaveGameData(fileName);
-                    break;
-                default:
-                    Console.WriteLine("Unknown command.");
-                    break;
-            }
-        }
-
-        private void SaveGameData(string fileName)
-        {
             string baseDir = AppDomain.CurrentDomain.BaseDirectory;
             string projectRoot = Directory.GetParent(baseDir)?.Parent?.Parent?.Parent?.FullName ?? throw new DirectoryNotFoundException("could not determine root directory");
             string gamesFolder = Path.Combine(projectRoot, "Games");
@@ -210,6 +210,7 @@ namespace JSON_RPG_Maker
                         
                     }
                     Console.WriteLine(string.Join(", ", PlayerInventory)); // remove after debugging
+                
             try
             {
                 GameData gameData = new GameData
@@ -217,7 +218,9 @@ namespace JSON_RPG_Maker
                     Rooms = new List<Room>(rooms.Values),
                     StartingRoom = player.CurrentRoom,
                     GameRules = gameRules,
-                    PlayerInventory = PlayerInventory
+                    PlayerInventory = PlayerInventory,
+                    PlayerCommands = PlayerCommands
+
 
                 };
                 string jsonData = JsonSerializer.Serialize(gameData, new JsonSerializerOptions { WriteIndented = true });

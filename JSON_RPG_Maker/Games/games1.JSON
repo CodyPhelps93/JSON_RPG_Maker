@@ -1,38 +1,80 @@
 {
-    "StartingRoom": "Police Station",
+    "StartingRoom": "Independence",
     "GameRules": [
-        "Navigate rooms using directions 'go <direction>' (e.g., 'go north').",
-        "Pick up items with 'take <item>' (e.g., 'take key').",
-        "Check your inventory with 'inventory'.",
+        "Navigate the Oregon Trail using 'go <direction>' (e.g., 'go forward').",
+        "Collect resources with 'take <item>' (e.g., 'take food').",
+        "Check your supplies with 'inventory'.",
+        "Use items with 'use <item>' (e.g., 'use food' to consume it).",
         "Type 'rules' to see these rules again.",
-        "Type 'quit' to exit the game. Good luck!"
+        "Type 'save' to save your progress.",
+        "Type 'quit' to exit the game.",
+        "Reach Oregon City with enough resources to win!"
     ],
+    "PlayerInventory": ["food", "water", "wagon wheel"],
     "Rooms": [
-     {
-        "Name": "Police Station",
-        "Description": "You are in a police station. There are doors to the north and south.",
-        "Exits": { "north": "Kitchen", "south": "Bedroom" },
-        "Items": ["key", "map"]
-    },
-
-    {
-        "Name": "Hallway",
-        "Description": "You are in a long hallway. There are doors to the north and south.",
-        "Exits": { "north": "Kitchen", "south": "Bedroom" },
-        "Items": ["key", "map"]
-    },
-    {
-        "Name": "Kitchen",
-        "Description": "You are in a kitchen. There is a door to the south.",
-        "Exits": { "south": "Hallway" },
-        "Items": ["knife", "apple"]
-    },
-    {
-        "Name": "Bedroom",
-        "Description": "You are in a cozy bedroom. There is a door to the north.",
-        "Exits": { "north": "Hallway" },
-        "Items": ["pillow", "blanket"]
-    }
-]
-
+        {
+            "Name": "Independence",
+            "Description": "You are in Independence, Missouri, starting your journey on the Oregon Trail.\n The trail stretches forward, and a trading post is nearby.",
+            "Exits": { "forward": "Prairie", "trading post": "Trading Post" },
+            "Items": ["food", "water"]
+        },
+        {
+            "Name": "Trading Post",
+            "Description": "A bustling trading post where you can gather supplies. The trail back to Independence is south.",
+            "Exits": { "south": "Independence" },
+            "Items": ["wagon wheel", "blanket"]
+        },
+        {
+            "Name": "Prairie",
+            "Description": "You're on the open prairie. The trail continues forward, and a river crossing is nearby.",
+            "Exits": { "forward": "Fort Laramie", "river": "River Crossing" },
+            "Items": ["food"]
+        },
+        {
+            "Name": "River Crossing",
+            "Description": "A wide river blocks your path. You can attempt to cross back to the prairie.",
+            "Exits": { "back": "Prairie" },
+            "Items": ["water"]
+        },
+        {
+            "Name": "Fort Laramie",
+            "Description": "You’ve reached Fort Laramie, a key resupply point. The trail continues forward.",
+            "Exits": { "forward": "South Pass" },
+            "Items": ["food", "wagon wheel"]
+        },
+        {
+            "Name": "South Pass",
+            "Description": "The South Pass is a rugged mountain crossing. The trail to Oregon City lies ahead.",
+            "Exits": { "forward": "Oregon City" },
+            "Items": ["water", "blanket"]
+        },
+        {
+            "Name": "Oregon City",
+            "Description": "Congratulations! You've reached Oregon City, your new home. You've won the game!",
+            "Exits": {},
+            "Items": []
+        }
+    ],
+    "PlayerCommands": [
+        {
+            "Name": "go",
+            "Description": "Move to the next location (e.g., 'go forward').",
+            "LScript": "if room.Exits[direction] then\n    player.CurrentRoom = room.Exits[direction]\n    print('You move ' .. direction .. ' to ' .. player.CurrentRoom)\nelse\n    print('You can\\'t go that way.')\nend"
+        },
+        {
+            "Name": "take",
+            "Description": "Pick up a resource from the current location.",
+            "LScript": "for i = 1, room.Items.Count do\n    local item = room.Items[i - 1]\n    if item == target then\n        room.Items:Remove(item)\n        player.Inventory:Add(item)\n        print('You took the ' .. item)\n        return\n    end\nend\nprint('Item not found in the room.')"
+        },
+        {
+            "Name": "inventory",
+            "Description": "Show your current supplies.",
+            "LScript": "local count = player.Inventory.Count\nif count == 0 then\n    print('Your inventory is empty.')\nelse\n    local items = {}\n    for i = 0, count - 1 do\n        items[i+1] = player.Inventory[i]\n    end\n    print('Inventory: ' .. table.concat(items, ', '))\nend"
+        },
+        {
+            "Name": "use",
+            "Description": "Use a resource from your inventory (e.g., 'use food').",
+            "LScript": "for i = 1, player.Inventory.Count do\n    local item = player.Inventory[i - 1]\n    if item == target then\n        player.Inventory:Remove(item)\n        print('You used the ' .. item)\n        if item == 'food' or item == 'water' then\n            print('You feel refreshed!')\n        elseif item == 'wagon wheel' then\n            print('The wagon is repaired!')\n        elseif item == 'blanket' then\n            print('You stay warm for the night.')\n        end\n        return\n    end\nend\nprint('You don\\'t have that item.')"
+        }
+    ]
 }
